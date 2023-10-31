@@ -120,7 +120,7 @@ CREATE TABLE `stock` (
   `apikey` varchar(250) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
-  KEY `stock` (`stock`(191))
+  KEY `stock` (`stock`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -156,7 +156,7 @@ CREATE TABLE `user` (
   `ts_ins` int(11) unsigned NOT NULL DEFAULT 0,
   `token` varchar(250) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `token` (`token`(191))
+  KEY `token` (`token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
