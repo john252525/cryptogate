@@ -98,8 +98,8 @@ class Order{
 								$order['stock_id'],
 								$order['type'],
 								$order['side'],
-								$order['positionSide'],
-								$order['pair'],
+					      @trim($order['positionSide']),  // иначе Warning: Undefined array key "positionSide", "pair"; Fatal error: Uncaught mysqli_sql_exception: Column 'positionSide' cannot be null
+						  @trim($order['pair']),
 								$data,
 								$order['state']
 						);

@@ -23,7 +23,9 @@
 
 	// debug data
 	if (!isset($_POST['json'])){
-		$_POST['json']=file_get_contents('../cryptogate_example_request.json');
+		if(!empty($_GET['json'])) $_POST['json'] = $_GET['json'];
+		else                      $_POST['json'] = file_get_contents('../cryptogate_example_request.json');
+
 		// echo "<pre>"; print_r(json_decode($_POST['json'],true)); echo "</pre>";		
 	}
 
