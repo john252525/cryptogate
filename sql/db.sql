@@ -120,7 +120,7 @@ CREATE TABLE `stock` (
   `apikey` varchar(250) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
-  KEY `stock` (`stock`) USING BTREE
+  KEY `stock` (`stock`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
