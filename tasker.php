@@ -25,7 +25,11 @@
 //---------------------------------------------------------------
 	$taskObject = new Task($db); 
 	
-	$p='create';
+	if (isset($_SERVER['argv'][1])) {
+		$p = $_SERVER['argv'][1];
+	}else{
+		$p='create';
+	}
 
 	if ( is_numeric($p) ){  // argv is state
 		$task_state = $p;
