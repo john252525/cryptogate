@@ -180,7 +180,11 @@
 
 		}
 
-		if ($sync_mode == 'sync') shell_exec("php -f tasker.php $state");
+		if ($sync_mode == 'sync'){
+		    $cmd = 'php -f ' . __DIR__ . '/tasker.php ' . $state;
+		  //echo $cmd;
+			shell_exec($cmd);
+	    }
 
 		$result= $orderObject->GetResponse($task_id);
 		echo "<pre>"; print_r($result); echo "</pre>";

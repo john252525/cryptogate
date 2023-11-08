@@ -10,18 +10,15 @@ class Task{
 	//---------------------------------------
 	// Получить Stock Name
 	//---------------------------------------
-	private function GetStockName($stock_id){
-
-		$sql  = 'SELECT stock FROM `' . _DB_TABLE_STOCK_ . '` WHERE id=?i';
-
-    	$stock = $this->db->getOne( $sql, $stock_id );
+	private function GetStock($stock_id){
+    	$stock = $this->db->getRow("SELECT * FROM ?n WHERE `id` = ?i LIMIT 1", _DB_TABLE_STOCK_, $stock_id);
 		return $stock;
 	}
 
 
 	public function GetRequest( $task_id ){
 
-		$sql  = 'SELECT DBtask.preorder_id, DBpreorder.* FROM '.
+		$sql  = 'SELECT DBtask.preorder_id, DBtask.action, DBpreorder.* FROM '.
 		'`' . _DB_TABLE_TASK_	 . '` AS DBtask, '.
 		'`' . _DB_TABLE_PREORDER_ . '` AS DBpreorder '.
 		'WHERE DBtask.id=?i AND DBpreorder.id=DBtask.preorder_id';
@@ -29,7 +26,12 @@ class Task{
     	$dbresult = $this->db->query($sql, $task_id);
 		$row=$this->db->fetch($dbresult);
 
-		$result['stock']		=$this->GetStockName($row['stock_id']);
+
+		$stock = $this->GetStock($row['stock_id']);
+
+		$result['action']       =$row['action'];
+		$result['apikey']       =$stock['apikey'];
+		$result['stock']		=$stock['stock'];
 		$result['type']			=$row['type'];
 		$result['side']			=$row['side'];
 		$result['positionSide']	=$row['positionSide'];
@@ -73,7 +75,7 @@ class Task{
 		$result=array();
 
 		$sql  = 'SELECT DBtask.preorder_id, DBtask.action, DBpreorder.stock_id, DBpreorder.user_id FROM '.
-		'`' . _DB_TABLE_TASK_	 . '` AS DBtask, '.
+		'`' . _DB_TABLE_TASK_     . '` AS DBtask, '.
 		'`' . _DB_TABLE_PREORDER_ . '` AS DBpreorder '.
 		'WHERE DBtask.id=?i AND DBpreorder.id=DBtask.preorder_id';
 
@@ -148,7 +150,7 @@ class Task{
 
 		$sql  = 'UPDATE `' . _DB_TABLE_ORDER_BINANCE_LOG_ . '` SET request=?s, data=?s'.
 		// ', order_id_1=?i, order_id_2=?s, state=?i'.
-		' WHERE id=?i';
+		' WHERE id=?i LIMIT 1';
 		
 		$this->db->query($sql, 
 								$request,
@@ -175,8 +177,9 @@ class Task{
 	//---------------------------------------
 	public function UpdateOrderBinance( $order_binance_id, $data ){
 
-		$sql = 'SELECT data FROM `' . _DB_TABLE_ORDER_BINANCE_ . '` WHERE id=?i';
-		$olddata = $this->db->getOne($sql, $order_binance_id);
+		$sql = 'SELECT * FROM `' . _DB_TABLE_ORDER_BINANCE_ . '` WHERE id=?i LIMIT 1';
+		$row = $this->db->getRow($sql, $order_binance_id);
+		$olddata = $row['data'];
 
 
 		// чтобы dt_upd и dt_check совпадали полностью, для будущей проверки изменения data
@@ -192,10 +195,11 @@ class Task{
 			$datanew=true;
 			
 			$sql.= ', data=?s, dt_upd=?s, ts_upd=?i';
-			$this->db->query($sql, $currDate, $currTime, $data, $currDate, $currTime);
+			$sql.= ' WHERE `id` = ?i LIMIT 1';
+			$this->db->query($sql, $currDate, $currTime, $data, $currDate, $currTime, $order_binance_id);  // $row['id']
 		}else{
-			
-			$this->db->query($sql, $currDate, $currTime);
+			$sql.= ' WHERE `id` = ?i LIMIT 1';
+			$this->db->query($sql, $currDate, $currTime, $order_binance_id);  // $row['id']
 		}
 
 		$cnt = $this->db->affectedRows();
@@ -219,11 +223,11 @@ class Task{
 	//---------------------------------------
 	public function UpdateOrderBinanceLogState( $order_binance_id, $order_binance_log_id ){
 
-		$sql = 'SELECT ts_upd, ts_check FROM `' . _DB_TABLE_ORDER_BINANCE_ . '` WHERE id=?i';
+		$sql = 'SELECT ts_upd, ts_check FROM `' . _DB_TABLE_ORDER_BINANCE_ . '` WHERE id=?i LIMIT 1';
 		$row = $this->db->getAll($sql, $order_binance_id);
 		
 		if ( $row[0]['ts_upd'] == $row[0]['ts_check'] ){
-			$sql  = 'UPDATE `' . _DB_TABLE_ORDER_BINANCE_LOG_ . '` SET state=1 WHERE id=?i';
+			$sql  = 'UPDATE `' . _DB_TABLE_ORDER_BINANCE_LOG_ . '` SET state=1 WHERE id=?i LIMIT 1';
 			$this->db->query($sql, $order_binance_log_id);	
 		}
 		
@@ -248,9 +252,25 @@ class Task{
 	//---------------------------------------
 	// пока что заглушка, ответ - рыба
 	//---------------------------------------
-	public function ApiBinanceOrder($task_id){
+	public function ApiBinanceOrder($binance_request){  // {"stock":"binance_spot","type":"limit","side":"sell","positionSide":"short","pair":"btc_usdt","data":{"qty":"20","price":"26444"}}
+		
+		$d = json_decode($binance_request, 1);
 
-		$json=file_get_contents('../cryptogate_example_binance_response.json');
+        if($d['action']       != 'create')       return '{"debug":"only_create"}';
+		if($d['stock']        != 'binance_spot') return '{"debug":"only_binance_spot"}';
+		if($d['positionSide'] != 'long')         return '{"debug":"only_long"}';
+
+		$p = [];
+		$p['apikey'] = $d['apikey'];
+		$p['type']   = $d['type'];
+		$p['pair']   = $d['pair'];
+		$p['side']   = $d['side'];
+		$p['amount'] = $d['data']['qty'];
+		$p['price']  = $d['data']['price'];
+		if(!empty($d['stop_price'])) $p['stop_price'] = $d['stoploss'];
+		$json=file_get_contents(_URL_ . '?' . http_build_query($p));
+
+	  //$json=file_get_contents('../cryptogate_example_binance_response.json');  // debug
 
 		return $json;
 	}
