@@ -183,11 +183,12 @@
 		if ($sync_mode == 'sync'){
 		    $cmd = 'php -f ' . __DIR__ . '/tasker.php ' . $state;
 		  //echo $cmd;
-			shell_exec($cmd);
+			echo '<hr>TASKER RESULT: ';
+			echo shell_exec($cmd);
 	    }
 
 		$result= $orderObject->GetResponse($task_id);
-		echo "<pre>"; print_r($result); echo "</pre>";
+		echo '<hr>RESULT<pre>'; print_r($result); echo '</pre>';
 
 	}else{
 		die('{"ok":false,"error":"need action"}');

@@ -249,11 +249,8 @@ class Task{
 	}
 
 
-	//---------------------------------------
-	// пока что заглушка, ответ - рыба
-	//---------------------------------------
-	public function ApiBinanceOrder($binance_request){  // {"stock":"binance_spot","type":"limit","side":"sell","positionSide":"short","pair":"btc_usdt","data":{"qty":"20","price":"26444"}}
-		
+	public function ApiBinanceOrder($binance_request){  // {"action":"create","apikey":"****","stock":"binance_spot","type":"limit","side":"buy","positionSide":"long","pair":"btc_usdt","data":{"qty":"20","price":"26444"}}
+      //echo $binance_request;
 		$d = json_decode($binance_request, 1);
 
         if($d['action']       != 'create')       return '{"debug":"only_create"}';
@@ -268,9 +265,9 @@ class Task{
 		$p['amount'] = $d['data']['qty'];
 		$p['price']  = $d['data']['price'];
 		if(!empty($d['stop_price'])) $p['stop_price'] = $d['stoploss'];
-		$json=file_get_contents(_URL_ . '?' . http_build_query($p));
+		$json = file_get_contents(_URL_ . '?' . http_build_query($p));
 
-	  //$json=file_get_contents('../cryptogate_example_binance_response.json');  // debug
+	  //$json = file_get_contents('../cryptogate_example_binance_response.json');  // debug
 
 		return $json;
 	}
