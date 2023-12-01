@@ -2,7 +2,8 @@
 // ===================================================================
 // Скрипт подготовки задания последующей отправки ордеров бирже
 // ===================================================================
-	echo '<head><meta charset="UTF-8"><head>';
+	$return_message = '<head><meta charset="UTF-8"><head>';
+	$return_data = [];
 
 	set_time_limit(60);
 	mb_internal_encoding("UTF-8");
@@ -93,8 +94,8 @@
 
 				$orders=json_decode($_POST['json'],true);
 				if (count($orders)>1) {
-
-					$deal_id=$orderObject->SaveDeal( $user_id, count($orders) );
+					$return_data['preorders'] = [];
+					$return_data['deal'] = $deal_id = $orderObject->SaveDeal( $user_id, count($orders) );
 				}
 
 
@@ -117,6 +118,8 @@
 					$order['stock_id']=$stock_id;
 					$order['state']=$orderstate;
 					$preorder_id=$orderObject->SavePreOrder( $order );
+					
+					$return_data['preorders'] []= $preorder_id;
 					
 					//----------------------------------------------------
 					// Если первый из набора ордеров, сохраняем в задачи
@@ -174,6 +177,23 @@
 			//----------------------------------------------------
 				break;
 			
+			case 'recreate':
+			
+				if ($sync_mode===false) $sync_mode = _default_mode_order_create_;
+				$state = ($sync_mode=='sync') ? mt_rand(1000000,9999999) : 0;
+
+				//----------------------------------------------------
+				// сохраняем в задачи
+				$task_order_id=$_GET['order_id'];
+				$task_id=$orderObject->SaveTask( 
+												$task_order_id, 
+												'create', 
+												$sync_mode,
+												$state
+											 );
+			//----------------------------------------------------
+				break;
+			
 			default:
 				die('{"ok":false,"error":"wrong action"}');
 				break;
@@ -183,12 +203,24 @@
 		if ($sync_mode == 'sync'){
 		    $cmd = 'php -f ' . __DIR__ . '/tasker.php ' . $state;
 		  //echo $cmd;
-			echo '<hr>TASKER RESULT: ';
-			echo shell_exec($cmd);
+			$return_message .= '<hr>TASKER RESULT: ';
+			$return_message .= shell_exec($cmd);
 	    }
 
 		$result= $orderObject->GetResponse($task_id);
-		echo '<hr>RESULT<pre>'; print_r($result); echo '</pre>';
+		$return_message .= '<hr>RESULT<pre>';
+		$return_message .= print_r($result, true);
+		$return_message .= '</pre>';
+
+		$response = (isset($_GET['mode']) and $_GET['mode'] == 'json')
+				  ? json_encode([
+					  	'ok' => true,
+					  	'message' => $return_message,
+					  	'data' => $return_data
+				    ])
+				  : $return_message;
+		echo $response;
+		die();
 
 	}else{
 		die('{"ok":false,"error":"need action"}');

@@ -1,9 +1,10 @@
 <?php
-	
+
   //define('_DB_LOGIN_',  	'');
   //define('_DB_PASSWORD_', '');
   //define('_DB_DATABASE_', '');
-    require_once '../.env.cryptogate';
+  //define('_URL_',         '');
+    require_once __DIR__ . '/../.env.cryptogate.php';
 
 	define('_DB_TABLE_USER_', 	 		 	'user'); // пользователи
 	define('_DB_TABLE_STOCK_', 				'stock'); // биржи
